@@ -1,0 +1,11 @@
+node_modules/
+*.vsix
+.tmp/
+e2e/artifacts/
+e2e/test-results/
+*.log
+.env
+.env.*
+web/vendor/
+server.md
+dist/

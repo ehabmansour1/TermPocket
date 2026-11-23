@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<title>TermPocket Monitor</title>
+<link rel="icon" id="favicon" href="/monitor/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/monitor/monitor.css">
+<script type="module" src="/monitor/monitor.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 9l2.5 2-2.5 2M11 13h4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 20.5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <div class="brand-text">
+      <span class="brand-name">TermPocket <b>Monitor</b></span>
+      <span class="brand-sub" id="hostline">this PC · local only</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="pulse" id="pulse" title="Polling /status every 2 s"><i></i><span id="updated">connecting…</span></span>
+    <button class="btn ghost" id="pauseBtn" type="button" title="Pause / resume live updates">Pause</button>
+    <button class="btn primary" id="selftestBtn" type="button">Run self-test</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="banner state-unknown" id="banner" aria-live="polite">
+    <div class="banner-icon" id="bannerIcon" aria-hidden="true"></div>
+    <div class="banner-body">
+      <div class="banner-kicker" id="bannerKicker">Overall status</div>
+      <h1 class="banner-title" id="bannerTitle">Checking…</h1>
+      <p class="banner-reason" id="bannerReason">Contacting the TermPocket agent on this PC.</p>
+      <ul class="banner-issues" id="bannerIssues"></ul>
+    </div>
+    <dl class="banner-facts" id="bannerFacts"></dl>
+    <div class="timeline" id="timeline">
+      <div class="timeline-h">
+        <span class="timeline-label">Last 30 minutes</span>
+        <span class="timeline-sum" id="timelineSum">collecting…</span>
+      </div>
+      <div class="timeline-bars" id="timelineBars" role="img" aria-label="Status over the last 30 minutes"></div>
+      <div class="timeline-axis"><span>30 min ago</span><span class="legend"><i class="good"></i>working <i class="degraded"></i>degraded <i class="down"></i>down <i class="none"></i>not watched</span><span>now</span></div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <article class="card" id="cardAgent">
+      <header class="card-h"><h2>Agent</h2><span class="tag" id="agentTag">—</span></header>
+      <dl class="kv" id="agentKv"></dl>
+    </article>
+
+    <article class="card" id="cardPublic">
+      <header class="card-h"><h2>Public access</h2><span class="tag" id="publicTag">—</span></header>
+      <dl class="kv" id="publicKv"></dl>
+    </article>
+
+    <article class="card" id="cardHelper">
+      <header class="card-h"><h2>Windows helper</h2><span class="tag" id="helperTag">—</span></header>
+      <dl class="kv" id="helperKv"></dl>
+      <p class="hint">Screen capture, mouse &amp; keyboard. Starts on first use.</p>
+    </article>
+
+    <article class="card" id="cardPtyHost">
+      <header class="card-h"><h2>Terminals host</h2><span class="tag" id="ptyHostTag">—</span></header>
+      <dl class="kv" id="ptyHostKv"></dl>
+      <p class="hint">Owns every terminal, so terminals keep running when the agent restarts.</p>
+    </article>
+
+    <article class="card" id="cardSecurity">
+      <header class="card-h"><h2>Security</h2><span class="tag" id="securityTag">—</span></header>
+      <dl class="kv" id="securityKv"></dl>
+    </article>
+
+    <article class="card span-8" id="cardPhones">
+      <header class="card-h"><h2>Phones &amp; laptops connected</h2><span class="count" id="phonesCount">0</span></header>
+      <div class="table-wrap">
+        <table class="tbl" id="phonesTbl">
+          <thead><tr><th>Device</th><th>IP address</th><th>Route</th><th>Connected</th><th>Terminals open</th><th>Screen</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="phonesEmpty">
+          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+          <strong>No phone or laptop connected right now</strong>
+          <span>Devices show up here the moment they open TermPocket. To add one, open <a href="/pair">the pairing page</a> on this PC.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card span-4 selftest" id="cardSelftest">
+      <header class="card-h"><h2>Self-test</h2><span class="tag" id="selftestTag">not run</span></header>
+      <p class="hint" id="selftestHint">Checks the agent locally, then the whole phone path through the public address — like a real phone would.</p>
+      <ol class="steps" id="selftestSteps"></ol>
+      <p class="selftest-meta" id="selftestMeta"></p>
+    </article>
+
+    <article class="card span-4" id="cardVscode">
+      <header class="card-h"><h2>VS Code windows</h2><span class="count" id="vscodeCount">0</span></header>
+      <ul class="list" id="vscodeList"></ul>
+      <div class="empty" id="vscodeEmpty">
+        <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 3.5l4 2v13l-4 2-9-8.5 9-8.5z"/><path d="M7.5 9l-4 3 4 3"/></svg>
+        <strong>No VS Code window connected</strong>
+        <span>Each VS Code window with the TermPocket extension appears here.</span>
+      </div>
+    </article>
+
+    <article class="card span-5" id="cardTerminals">
+      <header class="card-h"><h2>Terminals</h2><span class="count" id="terminalsCount">0</span></header>
+      <div class="table-wrap">
+        <table class="tbl" id="terminalsTbl">
+          <thead><tr><th>ID</th><th>Title</th><th>PID</th><th>State</th><th>Viewers</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="terminalsEmpty">
+          <svg class="empty-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M7 10l3 2.5L7 15M12.5 15H17"/></svg>
+          <strong>No agent terminals</strong>
+          <span>Terminals opened from the phone (or mirrored from VS Code) are listed here.</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card span-3" id="cardScreen">
+      <header class="card-h"><h2>Screen streams</h2></header>
+      <div class="bignum"><span id="screenStreams">0</span><small id="screenLabel">active streams</small></div>
+      <p class="hint">The screen is only captured while at least one device is watching.</p>
+    </article>
+
+    <article class="card span-12 logcard" id="cardLog">
+      <header class="card-h">
+        <h2>Live log</h2>
+        <div class="log-tools">
+          <div class="seg" role="group" aria-label="Level filter" id="levelSeg">
+            <button type="button" data-level="ALL" class="on">All <span></span></button>
+            <button type="button" data-level="INFO">Info <span></span></button>
+            <button type="button" data-level="WARN">Warn <span></span></button>
+            <button type="button" data-level="ERROR">Error <span></span></button>
+          </div>
+          <input class="search" id="logSearch" type="search" placeholder="Filter text…" spellcheck="false" autocomplete="off">
+          <label class="check"><input type="checkbox" id="logFollow" checked> Follow</label>
+        </div>
+      </header>
+      <div class="log" id="log" tabindex="0" aria-label="Agent log, newest at the bottom"></div>
+    </article>
+  </section>
+
+  <footer class="foot">
+    Served by the agent to this PC only (<code>127.0.0.1</code>). Tokens and keys are never shown here.
+  </footer>
+</main>
+</body>
+</html>

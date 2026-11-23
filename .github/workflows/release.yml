@@ -1,0 +1,239 @@
+name: Release
+
+# Push a tag "v<version>" (the version in agent/ and vscode-extension/package.json) to build and
+# publish a GitHub Release with:
+#   TermPocket-<ver>-win-x64.zip   portable bundle: node.exe + agent + web + scripts + relay + extension
+#   termpocket-<ver>.vsix          the VS Code extension
+#   install.ps1                    the one-liner installer (irm .../releases/latest/download/install.ps1 | iex)
+#   SHA256SUMS.txt                 SHA-256 of the three files above (install.ps1 checks the zip against it)
+# "Run workflow" (workflow_dispatch) only builds and tests; the files are kept as a workflow artifact.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (default: vscode-extension/package.json). No release is created.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  NODE_MAJOR: '24'
+
+jobs:
+  build:
+    name: Build and test the Windows bundle
+    runs-on: windows-latest
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      prerelease: ${{ steps.ver.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_MAJOR }}
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            vscode-extension/package-lock.json
+
+      - name: Version
+        id: ver
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $ext = (Get-Content vscode-extension/package.json -Raw | ConvertFrom-Json).version
+          $agent = (Get-Content agent/package.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $v = $env:GITHUB_REF_NAME -replace '^v', '' }
+          elseif ($env:INPUT_VERSION) { $v = $env:INPUT_VERSION -replace '^v', '' }
+          else { $v = $ext }
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Not a version: $v" }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and ($ext -ne $v -or $agent -ne $v)) {
+            throw "Tag v$v does not match the package versions (vscode-extension $ext, agent $agent). Bump them first."
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "prerelease=$(if ($v -match '-') { 'true' } else { 'false' })" >> $env:GITHUB_OUTPUT
+          "TP_VERSION=$v" >> $env:GITHUB_ENV
+          Write-Host "Building TermPocket $v"
+
+      - name: Download portable Node.js ${{ env.NODE_MAJOR }} (official win-x64 zip, SHA-256 checked against SHASUMS256.txt)
+        shell: pwsh
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $index = Invoke-RestMethod https://nodejs.org/dist/index.json
+          $rel = $index | Where-Object { $_.version -like "v$env:NODE_MAJOR.*" -and $_.files -contains 'win-x64-zip' } | Select-Object -First 1
+          if (-not $rel) { throw "No Node.js $env:NODE_MAJOR win-x64 release found" }
+          $nv = $rel.version
+          $base = "https://nodejs.org/dist/$nv"
+          $zipName = "node-$nv-win-x64.zip"
+          $dir = Join-Path $env:RUNNER_TEMP 'node-dl'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest "$base/SHASUMS256.txt" -OutFile (Join-Path $dir 'SHASUMS256.txt')
+          Invoke-WebRequest "$base/$zipName" -OutFile (Join-Path $dir $zipName)
+          $line = Get-Content (Join-Path $dir 'SHASUMS256.txt') | Where-Object { $_ -match "^([0-9a-f]{64})\s+$([regex]::Escape($zipName))$" } | Select-Object -First 1
+          if (-not $line) { throw "$zipName is not listed in SHASUMS256.txt" }
+          $expected = ($line -split '\s+')[0]
+          $actual = (Get-FileHash (Join-Path $dir $zipName) -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "SHA-256 mismatch for $zipName (expected $expected, got $actual)" }
+          Write-Host "Node.js $nv verified ($actual)"
+          Expand-Archive (Join-Path $dir $zipName) -DestinationPath $dir
+          $nodeDir = Join-Path $dir "node-$nv-win-x64"
+          & (Join-Path $nodeDir 'node.exe') --version
+          "NODE_DIR=$nodeDir" >> $env:GITHUB_ENV
+
+      - name: Package the VS Code extension
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Push-Location vscode-extension
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE) { exit 1 }
+          npm test
+          if ($LASTEXITCODE) { exit 1 }
+          npx --yes @vscode/vsce@3 package --out "../dist/termpocket-$env:TP_VERSION.vsix"
+          if ($LASTEXITCODE) { exit 1 }
+          Pop-Location
+
+      - name: Build TermPocket-${{ steps.ver.outputs.version }}-win-x64.zip (npm ci --omit=dev, node-pty prebuild check, web/vendor)
+        shell: powershell
+        run: .\scripts\release\build-bundle.ps1 -Version $env:TP_VERSION -NodeDir $env:NODE_DIR -Vsix "dist\termpocket-$env:TP_VERSION.vsix" -OutDir dist
+
+      - name: Install / upgrade / uninstall smoke test with the bundled node.exe
+        shell: powershell
+        run: .\scripts\release\test-install.ps1 -ZipPath "dist\TermPocket-$env:TP_VERSION-win-x64.zip"
+
+      - name: Release notes and Scoop manifest
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path extras | Out-Null
+          node scripts/release/release-notes.mjs $env:TP_VERSION --repo "${{ github.repository }}" | Out-File -Encoding utf8NoBOM extras/notes.md
+          node scripts/release/scoop-manifest.mjs $env:TP_VERSION dist extras/termpocket.json
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Upload release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            dist/TermPocket-*-win-x64.zip
+            dist/termpocket-*.vsix
+            dist/install.ps1
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload notes and Scoop manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-extras
+          path: extras/
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create the GitHub Release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: files
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-extras
+          path: extras
+
+      - name: Verify checksums
+        working-directory: files
+        run: sha256sum -c SHA256SUMS.txt
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG exists: replacing its files"
+            gh release upload "$TAG" files/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            flags=()
+            if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); else flags+=(--latest); fi
+            gh release create "$TAG" files/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+              --title "TermPocket $VERSION" --notes-file extras/notes.md --generate-notes "${flags[@]}"
+          fi
+
+  publish-openvsx:
+    name: Publish the extension to Open VSX (needs OVSX_PAT)
+    needs: [build, release]
+    if: github.ref_type == 'tag' && needs.build.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Skip without a token
+        if: env.OVSX_PAT == ''
+        run: echo "::notice::OVSX_PAT is not set - the extension was not published to Open VSX."
+
+      - uses: actions/setup-node@v4
+        if: env.OVSX_PAT != ''
+        with:
+          node-version: ${{ env.NODE_MAJOR }}
+
+      - uses: actions/download-artifact@v4
+        if: env.OVSX_PAT != ''
+        with:
+          name: release-files
+          path: files
+
+      - name: ovsx publish
+        if: env.OVSX_PAT != ''
+        run: |
+          npx --yes ovsx@0 create-namespace ehabmansour1 -p "$OVSX_PAT" || true
+          npx --yes ovsx@0 publish "files/termpocket-$VERSION.vsix" -p "$OVSX_PAT"
+
+  publish-marketplace:
+    name: Publish the extension to the VS Code Marketplace (needs VSCE_PAT)
+    needs: [build, release]
+    if: github.ref_type == 'tag' && needs.build.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Skip without a token
+        if: env.VSCE_PAT == ''
+        run: echo "::notice::VSCE_PAT is not set - the extension was not published to the VS Code Marketplace."
+
+      - uses: actions/setup-node@v4
+        if: env.VSCE_PAT != ''
+        with:
+          node-version: ${{ env.NODE_MAJOR }}
+
+      - uses: actions/download-artifact@v4
+        if: env.VSCE_PAT != ''
+        with:
+          name: release-files
+          path: files
+
+      - name: vsce publish
+        if: env.VSCE_PAT != ''
+        run: npx --yes @vscode/vsce@3 publish --packagePath "files/termpocket-$VERSION.vsix" -p "$VSCE_PAT"

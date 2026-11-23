@@ -1,0 +1,138 @@
+{
+  "name": "termpocket",
+  "displayName": "TermPocket — VS Code & terminals from your phone",
+  "description": "Control VS Code from your phone or another computer: files, editors, Problems, Source Control, commands and live terminals (Claude Code, vim, htop included) through the TermPocket agent on your Windows PC. Private over Tailscale, no port forwarding.",
+  "version": "1.0.0",
+  "publisher": "ehabmansour1",
+  "author": {
+    "name": "Ehab Mansour"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#0b0d12",
+    "theme": "dark"
+  },
+  "homepage": "https://github.com/ehabmansour1/TermPocket#readme",
+  "bugs": {
+    "url": "https://github.com/ehabmansour1/TermPocket/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ehabmansour1/TermPocket.git",
+    "directory": "vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "remote",
+    "phone",
+    "mobile",
+    "android",
+    "terminal",
+    "remote terminal",
+    "claude code",
+    "vs code remote",
+    "remote control",
+    "tailscale",
+    "pwa",
+    "mirror",
+    "termpocket"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onTerminalProfile:termpocket.mirroredTerminal"
+  ],
+  "main": "./src/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "termpocket.reconnect",
+        "title": "Reconnect to Agent",
+        "category": "TermPocket"
+      },
+      {
+        "command": "termpocket.newMirroredTerminal",
+        "title": "New Mirrored Terminal",
+        "category": "TermPocket",
+        "icon": "$(remote)"
+      },
+      {
+        "command": "termpocket.showInfo",
+        "title": "Show Pairing Info",
+        "category": "TermPocket"
+      },
+      {
+        "command": "termpocket.showMenu",
+        "title": "Show Menu",
+        "category": "TermPocket"
+      },
+      {
+        "command": "termpocket.mirrorDefault",
+        "title": "Make new terminals phone-visible (mirrored)",
+        "category": "TermPocket"
+      }
+    ],
+    "terminal": {
+      "profiles": [
+        {
+          "id": "termpocket.mirroredTerminal",
+          "title": "TermPocket (mirrored)",
+          "icon": "remote"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "TermPocket",
+      "properties": {
+        "termpocket.agentUrl": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "WebSocket URL of the TermPocket agent's VS Code endpoint. Leave empty to derive it from the agent's `config.json` (`ws://127.0.0.1:<port>/vscode`, i.e. `ws://127.0.0.1:8765/vscode` by default). (The old `vscontrol.agentUrl` user setting is still read when this one is not set.)"
+        },
+        "termpocket.configPath": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "markdownDescription": "Path to the agent's `config.json` (or the folder containing it), used to read the pairing token. Leave empty to use `config.json` in the folder named by the `TERMPOCKET_HOME` environment variable, else `%APPDATA%/TermPocket/config.json` (an install from before the rename keeps working: `%APPDATA%/VSControl/config.json` is used until the agent has copied it). (The old `vscontrol.configPath` user setting is still read when this one is not set.)"
+        },
+        "termpocket.liveBufferKB": {
+          "type": "number",
+          "default": 512,
+          "minimum": 64,
+          "maximum": 8192,
+          "scope": "application",
+          "markdownDescription": "How much recent output (in K characters) TermPocket keeps per ordinary VS Code terminal for the phone's **Live** view. Only output of commands seen through VS Code shell integration is captured. (The old `vscontrol.liveBufferKB` user setting is still read when this one is not set.)"
+        },
+        "termpocket.terminalSnapshot": {
+          "type": "boolean",
+          "default": true,
+          "scope": "application",
+          "markdownDescription": "When the phone opens an ordinary VS Code terminal whose output TermPocket could not capture (for example a program started before VS Code was reloaded), show what the terminal shows right now. VS Code has no API to read a terminal, so TermPocket briefly selects all in that terminal, copies it and restores your clipboard text (an image on the clipboard is not preserved). The terminal panel is revealed while it runs. (The old `vscontrol.terminalSnapshot` user setting is still read when this one is not set.)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node -e \"for (const f of ['src/extension.js','src/connection.js','src/config.js','src/terminals.js','src/mirror.js','src/workspace.js','src/util.js','src/live.js','src/settings.js','src/git.js','src/commandCatalog.js','src/snapshot.js']) require('child_process').execFileSync(process.execPath, ['--check', f], {stdio: 'inherit'})\"",
+    "package": "npx --yes @vscode/vsce package --out termpocket.vsix"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
+  }
+}

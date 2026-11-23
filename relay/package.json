@@ -1,0 +1,23 @@
+{
+  "name": "termpocket-relay",
+  "version": "1.0.0",
+  "description": "Optional self-hosted relay for TermPocket: reach your PC from your phone without opening ports at home (Tailscale is the default)",
+  "license": "MIT",
+  "author": "Ehab Mansour",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ehabmansour1/TermPocket.git",
+    "directory": "relay"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

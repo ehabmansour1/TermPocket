@@ -1,0 +1,39 @@
+{
+  "name": "termpocket-agent",
+  "version": "1.0.0",
+  "description": "TermPocket PC agent: durable terminals, VS Code bridge, screen, input and system control for the TermPocket phone/laptop app.",
+  "license": "MIT",
+  "author": "Ehab Mansour",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ehabmansour1/TermPocket.git",
+    "directory": "agent"
+  },
+  "homepage": "https://github.com/ehabmansour1/TermPocket#readme",
+  "bugs": {
+    "url": "https://github.com/ehabmansour1/TermPocket/issues"
+  },
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "termpocket-agent": "src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "vendor": "node scripts/vendor.js",
+    "postinstall": "node scripts/vendor.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "^1.2.0-beta.18",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "monaco-editor": "0.57.0",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.23.0"
+  }
+}

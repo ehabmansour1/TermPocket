@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/ehabmansour1/TermPocket/security/advisories/new
+    about: Please report security problems privately, never in a public issue.
+  - name: FAQ
+    url: https://github.com/ehabmansour1/TermPocket/blob/main/docs/faq.md
+    about: Common questions about connecting, Claude Code, VS Code and security.
+  - name: Troubleshooting
+    url: https://github.com/ehabmansour1/TermPocket/blob/main/docs/troubleshooting.md
+    about: Fixes for the most common problems.

@@ -1,0 +1,29 @@
+{
+  "name": "termpocket-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end tests for TermPocket: the phone protocol against the real agent and an isolated VS Code (integration.mjs), the PWA in headless Chrome (pwa, desktop, workbench, live and durable-terminal suites).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node integration.mjs",
+    "test:agent": "node integration.mjs --no-vscode",
+    "test:pwa": "node pwa.e2e.mjs",
+    "test:pwa:agent": "node pwa.e2e.mjs --no-vscode",
+    "test:desktop": "node desktop.e2e.mjs",
+    "test:desktop:agent": "node desktop.e2e.mjs --no-vscode",
+    "test:live": "node vscode-live.e2e.mjs",
+    "test:workbench": "node workbench.e2e.mjs",
+    "test:durable": "node durable.e2e.mjs",
+    "test:durable-terminals": "node durable-terminals.e2e.mjs",
+    "screenshots": "node screenshots.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.1"
+  }
+}

@@ -1,0 +1,306 @@
+<!doctype html>
+<!--
+  TermPocket demo desktop: a made-up Windows desktop with a VS Code-like editor window, used by the agent's
+  demo mode (TERMPOCKET_DEMO=1) instead of a real screen capture. Hand-drawn in HTML/CSS; nothing here
+  comes from a real PC. Rendered to desktop-1920x1080.jpg / desktop-1280x720.jpg by make-demo-desktop.mjs.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TermPocket demo desktop</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body {
+    font: 13px/1.4 "Segoe UI", system-ui, sans-serif; color: #ccc;
+    background:
+      radial-gradient(ellipse 900px 620px at 72% 58%, rgba(64, 140, 255, .55), transparent 70%),
+      radial-gradient(ellipse 700px 520px at 60% 70%, rgba(46, 226, 176, .28), transparent 72%),
+      radial-gradient(ellipse 1100px 700px at 85% 30%, rgba(120, 90, 255, .30), transparent 70%),
+      radial-gradient(ellipse 1300px 900px at 20% 100%, rgba(10, 60, 140, .55), transparent 70%),
+      linear-gradient(160deg, #0a1630 0%, #0b2150 45%, #08142c 100%);
+  }
+  /* soft "bloom" petals of the wallpaper */
+  .bloom { position: absolute; left: 1250px; top: 620px; width: 760px; height: 640px; filter: blur(2px); opacity: .9; }
+  .bloom i { position: absolute; left: 50%; top: 50%; width: 520px; height: 220px; margin: -110px 0 0 -260px; border-radius: 50%;
+    background: linear-gradient(90deg, rgba(140, 200, 255, .0), rgba(140, 200, 255, .32) 45%, rgba(110, 240, 210, .18) 70%, rgba(140, 200, 255, 0));
+    transform-origin: 50% 50%; }
+  .icons { position: absolute; left: 18px; top: 16px; display: grid; gap: 22px; }
+  .dicon { width: 76px; text-align: center; color: #fff; font-size: 12px; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+  .dicon .g { width: 44px; height: 40px; margin: 0 auto 6px; border-radius: 6px; }
+  .bin { background: linear-gradient(180deg, #d7e3f4, #9fb6d6); clip-path: polygon(14% 18%, 86% 18%, 78% 100%, 22% 100%); }
+  .folder { background: linear-gradient(180deg, #ffd36b, #f0a830); border-radius: 4px 4px 6px 6px; }
+
+  .win { position: absolute; border-radius: 9px; overflow: hidden; box-shadow: 0 24px 70px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08); }
+
+  /* --- browser window (behind) --- */
+  .browser { left: 1396px; top: 96px; width: 500px; height: 640px; background: #202124; }
+  .browser .top { height: 42px; background: #35363a; display: flex; align-items: flex-end; padding: 0 10px; gap: 6px; }
+  .browser .tab { height: 34px; width: 200px; background: #202124; border-radius: 9px 9px 0 0; color: #e8eaed; padding: 9px 12px; font-size: 12px; display: flex; gap: 8px; align-items: center; }
+  .browser .tab b { width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #6ef0c2, #46c9e6); }
+  .browser .bar { height: 40px; display: flex; align-items: center; padding: 0 14px; gap: 10px; background: #202124; border-bottom: 1px solid #3c4043; }
+  .browser .url { flex: 1; height: 28px; border-radius: 14px; background: #303134; color: #bdc1c6; padding: 5px 14px; font-size: 13px; }
+  .page { padding: 30px 26px; background: #f6f7fb; height: 100%; color: #1f2430; }
+  .page h1 { font: 600 26px "Segoe UI", sans-serif; margin-bottom: 6px; }
+  .page p { color: #5b6275; margin-bottom: 22px; }
+  .todo { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(20,30,60,.08); font-size: 14px; }
+  .todo s { color: #9aa0ad; }
+  .chk { width: 18px; height: 18px; border-radius: 5px; border: 2px solid #b6bccb; }
+  .chk.on { background: #2f6bff; border-color: #2f6bff; }
+
+  /* --- VS Code-like window --- */
+  .code { left: 112px; top: 34px; width: 1300px; height: 962px; background: #1f1f1f; display: grid; grid-template-rows: 35px 1fr 22px; }
+  .title { background: #181818; display: flex; align-items: center; border-bottom: 1px solid #2b2b2b; font-size: 13px; color: #cccccc; }
+  .logo { width: 34px; height: 35px; display: grid; place-items: center; }
+  .logo span { width: 16px; height: 16px; border-radius: 3px; background: #3794ff; display: grid; place-items: center; color: #fff; font: 700 9px Consolas, monospace; }
+  .menu { display: flex; gap: 2px; }
+  .menu span { padding: 4px 7px; border-radius: 4px; }
+  .cmdc { margin: 0 auto; width: 520px; height: 24px; border: 1px solid #3c3c3c; background: #262626; border-radius: 6px; color: #9d9d9d; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; }
+  .ctl { display: flex; }
+  .ctl span { width: 46px; height: 35px; display: grid; place-items: center; color: #ccc; font-size: 14px; }
+  .main { display: grid; grid-template-columns: 48px 270px 1fr; min-height: 0; }
+  .act { background: #181818; border-right: 1px solid #2b2b2b; display: flex; flex-direction: column; align-items: center; padding-top: 6px; gap: 4px; }
+  .act svg { width: 24px; height: 24px; margin: 12px 0; stroke: #868686; fill: none; stroke-width: 1.6; }
+  .act .on svg { stroke: #d7d7d7; }
+  .act .on { border-left: 2px solid #0078d4; width: 100%; display: flex; justify-content: center; }
+  .side { background: #181818; border-right: 1px solid #2b2b2b; font-size: 13px; }
+  .side h4 { font: 400 11px "Segoe UI", sans-serif; letter-spacing: .04em; color: #bbb; padding: 10px 20px 8px; }
+  .sec { font-weight: 700; font-size: 11px; color: #ccc; padding: 4px 8px; }
+  .tree div { height: 22px; display: flex; align-items: center; gap: 6px; color: #cccccc; white-space: nowrap; }
+  .tree .sel { background: #37373d; outline: 1px solid #0078d4; outline-offset: -1px; }
+  .tree .m { color: #e2c08d; }
+  .tree .u { color: #73c991; }
+  .tree em { font-style: normal; margin-left: auto; margin-right: 12px; font-size: 12px; }
+  .fi { width: 16px; text-align: center; font: 700 9px Consolas, monospace; }
+  .ts { color: #3178c6; } .tsx { color: #4fc1ff; } .js { color: #cbcb41; } .json { color: #cbcb41; } .md { color: #519aba; }
+  .chev { width: 10px; color: #c5c5c5; font-size: 10px; }
+  .edit { display: grid; grid-template-rows: 35px 22px 1fr 280px; min-width: 0; background: #1f1f1f; }
+  .tabs { display: flex; background: #181818; border-bottom: 1px solid #2b2b2b; }
+  .tabs div { padding: 0 14px; display: flex; align-items: center; gap: 7px; border-right: 1px solid #2b2b2b; color: #9d9d9d; font-size: 13px; }
+  .tabs .act2 { background: #1f1f1f; color: #fff; border-top: 1px solid #0078d4; }
+  .tabs .act2::after { content: "×"; margin-left: 10px; color: #ccc; }
+  .crumbs { padding: 2px 16px; color: #a9a9a9; font-size: 12.5px; }
+  .src { display: grid; grid-template-columns: 62px 1fr 70px; font: 14px/20px "Cascadia Code", Consolas, monospace; overflow: hidden; }
+  .ln { color: #6e7681; text-align: right; padding-right: 22px; }
+  .ln .cur { color: #cccccc; }
+  pre { font: inherit; color: #cccccc; white-space: pre; }
+  .curline { background: #2a2d2e66; display: inline-block; width: 100%; outline: 1px solid #282828; }
+  .k { color: #569cd6; } .c2 { color: #c586c0; } .s { color: #ce9178; } .n { color: #b5cea8; } .f { color: #dcdcaa; }
+  .t { color: #4ec9b0; } .v { color: #9cdcfe; } .cm { color: #6a9955; } .p { color: #d4d4d4; } .tpl { color: #ce9178; }
+  .caret { display: inline-block; width: 2px; height: 18px; background: #aeafad; vertical-align: -3px; }
+  .squig { text-decoration: underline wavy #f2cc60; text-underline-offset: 3px; }
+  .mini { border-left: 1px solid #2b2b2b33; padding: 4px 8px; opacity: .55; }
+  .mini i { display: block; height: 2px; margin: 2px 0; border-radius: 1px; background: #5a6b7d; }
+  .panel { border-top: 1px solid #2b2b2b; background: #181818; display: grid; grid-template-rows: 35px 1fr; }
+  .ptabs { display: flex; gap: 22px; padding: 0 20px; align-items: center; font-size: 11px; letter-spacing: .03em; color: #9d9d9d; }
+  .ptabs .on { color: #e7e7e7; border-bottom: 1px solid #e7e7e7; padding: 9px 0 8px; }
+  .ptabs .badge { background: #616161; color: #fff; border-radius: 9px; padding: 1px 6px; font-size: 10px; margin-left: 4px; }
+  .ptabs .right { margin-left: auto; display: flex; gap: 14px; letter-spacing: 0; font-size: 12px; color: #ccc; }
+  .term { display: grid; grid-template-columns: 1fr 190px; min-height: 0; }
+  .term pre { padding: 6px 20px; font: 13.5px/19px "Cascadia Code", Consolas, monospace; color: #cccccc; }
+  .tlist { border-left: 1px solid #2b2b2b; padding-top: 4px; font-size: 13px; }
+  .tlist div { padding: 3px 12px; display: flex; gap: 8px; align-items: center; color: #ccc; }
+  .tlist .on { background: #37373d; }
+  .tlist b { font: 700 10px Consolas, monospace; color: #6ef0c2; }
+  .g1 { color: #23d18b; } .y1 { color: #f5f543; } .b1 { color: #3b8eea; } .d1 { color: #8a8a8a; } .m1 { color: #d670d6; } .w1 { color: #e5e5e5; }
+  .blk { display: inline-block; width: 8px; height: 17px; background: #cccccc; vertical-align: -3px; }
+  .status { background: #181818; border-top: 1px solid #2b2b2b; display: flex; align-items: center; font-size: 12px; color: #cccccc; }
+  .status span { padding: 0 9px; display: flex; gap: 5px; align-items: center; height: 22px; }
+  .status .remote { background: #0078d4; color: #fff; padding: 0 12px; }
+  .status .sp { margin-left: auto; }
+
+  /* --- taskbar --- */
+  .taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: rgba(28, 32, 42, .86); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; }
+  .tb-c { margin: 0 auto; display: flex; gap: 6px; }
+  .tb { width: 40px; height: 40px; border-radius: 6px; display: grid; place-items: center; position: relative; }
+  .tb.on { background: rgba(255,255,255,.08); }
+  .tb.on::after { content: ""; position: absolute; bottom: 2px; width: 16px; height: 3px; border-radius: 2px; background: #6cb8ff; }
+  .tb.run::after { content: ""; position: absolute; bottom: 2px; width: 6px; height: 3px; border-radius: 2px; background: #9aa3b5; }
+  .start { display: grid; grid-template-columns: 10px 10px; gap: 2px; }
+  .start i { width: 10px; height: 10px; background: linear-gradient(135deg, #4cc2ff, #0a7ae0); border-radius: 1px; }
+  .tray { position: absolute; right: 12px; top: 0; height: 48px; display: flex; align-items: center; gap: 14px; color: #fff; font-size: 12px; }
+  .clock { text-align: right; line-height: 16px; }
+</style>
+</head>
+<body>
+  <div class="bloom" aria-hidden="true">
+    <i style="transform: rotate(0deg)"></i><i style="transform: rotate(30deg)"></i><i style="transform: rotate(60deg)"></i>
+    <i style="transform: rotate(90deg)"></i><i style="transform: rotate(120deg)"></i><i style="transform: rotate(150deg)"></i>
+  </div>
+
+  <div class="icons">
+    <div class="dicon"><div class="g bin"></div>Recycle Bin</div>
+    <div class="dicon"><div class="g folder"></div>my-app</div>
+  </div>
+
+  <!-- browser (behind the editor) -->
+  <div class="win browser">
+    <div class="top"><div class="tab"><b></b>Todo · my-app</div></div>
+    <div class="bar"><span style="color:#9aa0a6">&#8592; &#8594; &#8635;</span><div class="url">localhost:5173</div></div>
+    <div class="page">
+      <h1>Today</h1>
+      <p>3 of 5 done · synced 2 s ago</p>
+      <div class="todo"><span class="chk on"></span><s>Ship the /health endpoint</s></div>
+      <div class="todo"><span class="chk on"></span><s>Fix the date picker on mobile</s></div>
+      <div class="todo"><span class="chk on"></span><s>Review the router refactor</s></div>
+      <div class="todo"><span class="chk"></span>Add rate limiting to /api/todos</div>
+      <div class="todo"><span class="chk"></span>Write release notes for v1.4</div>
+    </div>
+  </div>
+
+  <!-- VS Code-like editor window -->
+  <div class="win code">
+    <div class="title">
+      <div class="logo"><span>&lt;/&gt;</span></div>
+      <div class="menu"><span>File</span><span>Edit</span><span>Selection</span><span>View</span><span>Go</span><span>Run</span><span>Terminal</span><span>Help</span></div>
+      <div class="cmdc">&#8592;&nbsp;&nbsp;&#8594;&nbsp;&nbsp;&nbsp;&#9906; my-app</div>
+      <div class="ctl"><span>&#8212;</span><span>&#9744;</span><span>&#10005;</span></div>
+    </div>
+    <div class="main">
+      <div class="act">
+        <div class="on"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M4 7v15h12"/></svg></div>
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l6 6"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 5-12 3-12 7"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M8 5l12 7-12 7z"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M17.5 14v7M14 17.5h7"/></svg>
+      </div>
+      <div class="side">
+        <h4>EXPLORER</h4>
+        <div class="sec">&#8964; MY-APP</div>
+        <div class="tree">
+          <div style="padding-left:12px"><span class="chev">&#8964;</span>src</div>
+          <div style="padding-left:24px"><span class="chev">&#8250;</span>components</div>
+          <div style="padding-left:24px"><span class="chev">&#8964;</span>api</div>
+          <div style="padding-left:46px"><span class="fi ts">TS</span><span class="m">routes.ts</span><em class="m">M</em></div>
+          <div style="padding-left:46px"><span class="fi ts">TS</span>todos.ts</div>
+          <div style="padding-left:34px"><span class="fi tsx">TSX</span>App.tsx</div>
+          <div style="padding-left:34px"><span class="fi ts">TS</span>logger.ts</div>
+          <div class="sel" style="padding-left:34px"><span class="fi ts">TS</span><span class="m">server.ts</span><em class="m">M</em></div>
+          <div style="padding-left:34px"><span class="fi ts">TS</span><span class="u">rateLimit.ts</span><em class="u">U</em></div>
+          <div style="padding-left:12px"><span class="chev">&#8250;</span>test</div>
+          <div style="padding-left:24px"><span class="fi md">{}</span>.prettierrc</div>
+          <div style="padding-left:24px"><span class="fi json">{}</span>package.json</div>
+          <div style="padding-left:24px"><span class="fi md">M&#8595;</span>README.md</div>
+          <div style="padding-left:24px"><span class="fi json">{}</span>tsconfig.json</div>
+          <div style="padding-left:24px"><span class="fi js">JS</span>vite.config.js</div>
+        </div>
+      </div>
+      <div class="edit">
+        <div class="tabs">
+          <div class="act2"><span class="fi ts">TS</span>server.ts</div>
+          <div><span class="fi ts">TS</span>routes.ts</div>
+          <div><span class="fi tsx">TSX</span>App.tsx</div>
+          <div><span class="fi ts">TS</span>rateLimit.ts</div>
+        </div>
+        <div class="crumbs">src &#8250; <span class="fi ts">TS</span> server.ts &#8250; app.get('/health') callback</div>
+        <div class="src">
+          <div class="ln" id="ln"></div>
+          <pre id="code"></pre>
+          <div class="mini" id="mini"></div>
+        </div>
+        <div class="panel">
+          <div class="ptabs"><span>PROBLEMS<span class="badge">1</span></span><span>OUTPUT</span><span>DEBUG CONSOLE</span><span class="on">TERMINAL</span><span>PORTS</span>
+            <span class="right"><span>+ &#8964;</span><span>&#9707;</span><span>&#128465;</span><span>&#8943;</span><span>&#8963;</span><span>&#10005;</span></span></div>
+          <div class="term">
+<pre><span class="b1">PS C:\dev\my-app&gt;</span> npm run dev
+<span class="d1">&gt; my-app@1.4.0 dev</span>
+<span class="d1">&gt; tsx watch src/server.ts</span>
+<span class="d1">10:41:58</span> <span class="g1">ready</span>  API listening on <span class="b1">http://localhost:3000</span>
+<span class="d1">10:42:03</span> <span class="w1">GET </span> /api/todos        <span class="g1">200</span>  <span class="d1">12 ms</span>
+<span class="d1">10:42:05</span> <span class="w1">POST</span> /api/todos        <span class="g1">201</span>  <span class="d1">18 ms</span>
+<span class="d1">10:42:09</span> <span class="w1">GET </span> /health           <span class="g1">200</span>  <span class="d1"> 1 ms</span>
+<span class="d1">10:42:11</span> <span class="m1">watch</span>  src/server.ts changed, restarting…
+<span class="d1">10:42:11</span> <span class="g1">ready</span>  API listening on <span class="b1">http://localhost:3000</span> <span class="blk"></span></pre>
+            <div class="tlist">
+              <div class="on"><b>&gt;_</b>node &nbsp;<span class="d1">dev</span></div>
+              <div><b>&gt;_</b>pwsh</div>
+              <div><b>&gt;_</b>TermPocket</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="status">
+      <span class="remote">&gt;&lt; TermPocket</span>
+      <span>&#5833; main*</span><span>&#8635; 0&#8595; 1&#8593;</span><span>&#9447; 0 &nbsp;&#9888; 1</span>
+      <span class="sp">Ln 15, Col 47</span><span>Spaces: 2</span><span>UTF-8</span><span>LF</span><span>{ } TypeScript</span><span>Prettier</span><span>&#128276;</span>
+    </div>
+  </div>
+
+  <div class="taskbar">
+    <div class="tb-c">
+      <div class="tb"><div class="start"><i></i><i></i><i></i><i></i></div></div>
+      <div class="tb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div>
+      <div class="tb run"><div style="width:22px;height:17px;border-radius:3px;background:linear-gradient(180deg,#ffd36b,#f0a830)"></div></div>
+      <div class="tb run"><div style="width:22px;height:22px;border-radius:50%;background:conic-gradient(#ea4335 0 33%,#fbbc05 0 66%,#34a853 0);box-shadow:inset 0 0 0 5px rgba(0,0,0,0)"><div style="width:10px;height:10px;margin:6px;border-radius:50%;background:#4285f4;border:2px solid #fff"></div></div></div>
+      <div class="tb on"><div style="width:22px;height:22px;border-radius:5px;background:#3794ff;color:#fff;font:700 10px Consolas,monospace;display:grid;place-items:center">&lt;/&gt;</div></div>
+      <div class="tb run"><div style="width:22px;height:20px;border-radius:4px;background:#1b1f27;border:1px solid #5a6478;color:#6ef0c2;font:700 10px Consolas,monospace;display:grid;place-items:center">&gt;_</div></div>
+    </div>
+    <div class="tray">
+      <span>&#8963;</span>
+      <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="#fff" stroke-width="1.6"><path d="M1 5a12 12 0 0 1 16 0M4 8a7.5 7.5 0 0 1 10 0M7 11a3 3 0 0 1 4 0"/></svg>
+      <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="#fff" stroke-width="1.6"><path d="M2 5h3l4-3v10l-4-3H2zM12 4a4 4 0 0 1 0 6M14.5 2a7 7 0 0 1 0 10"/></svg>
+      <svg width="24" height="13" viewBox="0 0 24 13" fill="none" stroke="#fff" stroke-width="1.4"><rect x="1" y="1" width="19" height="11" rx="2"/><rect x="3" y="3" width="13" height="7" fill="#fff" stroke="none"/><path d="M22 4.5v4"/></svg>
+      <div class="clock">10:42 AM<br>11/23/2026</div>
+    </div>
+  </div>
+
+<script>
+  // The editor's code, highlighted by a tiny TypeScript tokenizer (keywords, strings, numbers, calls, types).
+  const SRC = [
+    "import express from 'express';",
+    "import { createServer } from 'node:http';",
+    "import { router } from './api/routes';",
+    "import { rateLimit } from './rateLimit';",
+    "import { logger } from './logger';",
+    "",
+    "const app = express();",
+    "const port = Number(process.env.PORT ?? 3000);",
+    "",
+    "app.use(express.json());",
+    "app.use('/api', rateLimit({ windowMs: 60_000, max: 120 }), router);",
+    "",
+    "// Liveness probe for the load balancer and the uptime monitor.",
+    "app.get('/health', (_req, res) => {",
+    "  res.json({ ok: true, uptime: process.uptime(), version: '1.4.0' });",
+    "});",
+    "",
+    "app.use((err: Error, _req, res, _next) => {",
+    "  logger.error(err);",
+    "  res.status(500).json({ error: 'Something went wrong' });",
+    "});",
+    "",
+    "createServer(app).listen(port, () => {",
+    "  logger.info(`API listening on http://localhost:${port}`);",
+    "});",
+    "",
+    "export default app;",
+  ];
+  const KW = /^(import|from|const|let|export|default|return|new|true|false|async|await)$/;
+  const CTRL = /^(import|from|export|default|return|await)$/;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function hl(line) {
+    if (/^\s*\/\//.test(line)) return `<span class="cm">${esc(line)}</span>`;
+    return line.replace(/(`[^`]*`|'[^']*')|(\b\d[\d_]*\b)|([A-Za-z_$][\w$]*)(\s*\()?|([^\w\s'`]+)|(\s+)/g, (m, str, num, id, call, punct, ws) => {
+      if (str) return `<span class="s">${esc(str)}</span>`;
+      if (num) return `<span class="n">${num}</span>`;
+      if (id) {
+        const cls = CTRL.test(id) ? 'c2' : KW.test(id) ? 'k' : call ? 'f' : /^(Error|Number)$/.test(id) ? 't' : 'v';
+        return `<span class="${cls}">${id}</span>${call ? `<span class="p">${esc(call)}</span>` : ''}`;
+      }
+      if (punct) return `<span class="p">${esc(punct)}</span>`;
+      return ws;
+    });
+  }
+  const CUR = 14; // 0-based: the "res.json(...)" line holds the caret
+  document.getElementById('code').innerHTML = SRC.map((l, i) => {
+    let html = hl(l) || ' ';
+    if (i === CUR) html = `<span class="curline">${html.replace('</span><span class="p">,</span> <span class="v">version</span>', '</span><span class="p">,</span><span class="caret"></span> <span class="v">version</span>')}</span>`;
+    if (i === 17) html = html.replace('<span class="v">_req</span>', '<span class="v squig">_req</span>');
+    return html;
+  }).join('\n');
+  document.getElementById('ln').innerHTML = SRC.map((_, i) => `<div class="${i === CUR ? 'cur' : ''}">${i + 1}</div>`).join('');
+  document.getElementById('mini').innerHTML = SRC.map((l) => `<i style="width:${Math.min(54, l.length * 0.8)}px;opacity:${l.trim() ? 1 : 0}"></i>`).join('');
+</script>
+</body>
+</html>

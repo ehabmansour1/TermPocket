@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="Control your PC, VS Code and its terminals from your phone.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TermPocket">
+  <meta name="referrer" content="no-referrer">
+  <title>TermPocket</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="vendor/xterm.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      /* TermPocket used to be called "VS Control": adopt its saved settings (pairing token, layout, ...)
+         once, so an installed app keeps working after the update. */
+      try {
+        var old = [];
+        for (var i = 0; i < localStorage.length; i++) old.push(localStorage.key(i));
+        for (var j = 0; j < old.length; j++) {
+          var k = old[j];
+          if (k && k.indexOf('vscontrol.') === 0) {
+            var nk = 'termpocket.' + k.slice(10);
+            if (localStorage.getItem(nk) === null) localStorage.setItem(nk, localStorage.getItem(k));
+            localStorage.removeItem(k);
+          }
+        }
+      } catch (e) { /* storage unavailable */ }
+    })();
+    /* Desktop layout before first paint (same rule as js/layout.js): ≥ 900 px and a fine pointer,
+       unless the user forced a layout in the menu. */
+    (function () {
+      try {
+        var pref = JSON.parse(localStorage.getItem('termpocket.layout') || '"auto"');
+        var wide = matchMedia('(min-width: 900px)').matches;
+        var desk = pref === 'phone' ? false : pref === 'desktop' ? wide : matchMedia('(min-width: 900px) and (pointer: fine)').matches;
+        if (desk) document.documentElement.classList.add('desk');
+      } catch (e) { /* layout.js decides */ }
+    })();
+  </script>
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- Phones: the sidebar is display:contents (top bar + bottom tab bar). Desktop: a left sidebar. -->
+    <aside class="sidebar" aria-label="TermPocket">
+      <header class="topbar">
+        <div class="brand" aria-label="TermPocket">
+          <span class="brand-mark" aria-hidden="true"><span>&gt;</span><i>_</i></span>
+          <span class="brand-name">TermPocket</span>
+        </div>
+        <button id="statusPill" class="status-pill" type="button" data-status="idle" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span class="status-text">Starting…</span>
+        </button>
+        <button id="menuBtn" class="icon-btn" type="button" aria-label="Menu and connection" title="Menu"></button>
+      </header>
+
+      <nav class="tabbar" role="tablist" aria-label="Sections">
+        <button id="tab-terminals" class="tab" type="button" role="tab" data-tab="terminals" aria-controls="panel-terminals" aria-selected="false">
+          <span class="tab-label">Terminals</span><span class="badge" hidden></span>
+        </button>
+        <button id="tab-code" class="tab" type="button" role="tab" data-tab="code" aria-controls="panel-code" aria-selected="false">
+          <span class="tab-label">Code</span><span class="badge err" hidden></span>
+        </button>
+        <button id="tab-screen" class="tab" type="button" role="tab" data-tab="screen" aria-controls="panel-screen" aria-selected="false">
+          <span class="tab-label">Screen</span><span class="badge" hidden></span>
+        </button>
+        <button id="tab-system" class="tab" type="button" role="tab" data-tab="system" aria-controls="panel-system" aria-selected="false">
+          <span class="tab-label">System</span><span class="badge" hidden></span>
+        </button>
+      </nav>
+
+      <div id="sideFoot" class="side-foot"></div>
+    </aside>
+
+    <div id="offlineBar" class="offline-bar" role="status" hidden></div>
+
+    <main id="panels" class="panels">
+      <section id="panel-terminals" class="panel" data-tab="terminals" role="tabpanel" aria-labelledby="tab-terminals"></section>
+      <section id="panel-code" class="panel" data-tab="code" role="tabpanel" aria-labelledby="tab-code"></section>
+      <section id="panel-screen" class="panel panel-flush" data-tab="screen" role="tabpanel" aria-labelledby="tab-screen"></section>
+      <section id="panel-system" class="panel" data-tab="system" role="tabpanel" aria-labelledby="tab-system"></section>
+    </main>
+  </div>
+
+  <div id="views"></div>
+  <div id="layers"></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <noscript><p class="noscript">TermPocket needs JavaScript enabled.</p></noscript>
+
+  <!-- xterm.js UMD builds (globals Terminal and FitAddon.FitAddon), vendored by agent `npm run vendor` -->
+  <script src="vendor/xterm.js" defer></script>
+  <script src="vendor/addon-fit.js" defer></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

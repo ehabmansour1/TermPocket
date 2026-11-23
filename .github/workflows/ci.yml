@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests, checks and install smoke test (Windows, Node 24)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            vscode-extension/package-lock.json
+            relay/package-lock.json
+            e2e/package-lock.json
+
+      - name: npm ci - agent (postinstall vendors xterm.js and Monaco into web/vendor)
+        working-directory: agent
+        run: npm ci --no-audit --no-fund
+
+      - name: npm ci - VS Code extension
+        working-directory: vscode-extension
+        run: npm ci --no-audit --no-fund
+
+      - name: npm ci - relay
+        working-directory: relay
+        run: npm ci --no-audit --no-fund
+
+      - name: npm ci - e2e (playwright-core never downloads a browser)
+        working-directory: e2e
+        run: npm ci --no-audit --no-fund
+
+      - name: Agent unit tests
+        working-directory: agent
+        run: npm test
+
+      - name: Extension unit tests
+        working-directory: vscode-extension
+        run: npm test
+
+      - name: Extension syntax check
+        working-directory: vscode-extension
+        run: npm run check
+
+      - name: PWA static check (references, service worker list, manifest, imports)
+        run: node web/tools/check-refs.mjs --strict
+
+      - name: Relay and e2e syntax check
+        shell: pwsh
+        run: |
+          node --check relay/server.js
+          if ($LASTEXITCODE) { exit 1 }
+          foreach ($f in Get-ChildItem e2e -Filter *.mjs -Recurse -File | Where-Object FullName -notmatch 'node_modules') {
+            node --check $f.FullName
+            if ($LASTEXITCODE) { exit 1 }
+          }
+
+      - name: PowerShell parse check (all .ps1, scoop manifest JSON)
+        shell: powershell
+        run: .\scripts\release\check-ps.ps1
+
+      - name: Release notes extraction
+        shell: pwsh
+        run: |
+          $v = (Get-Content vscode-extension/package.json -Raw | ConvertFrom-Json).version
+          node scripts/release/release-notes.mjs $v --repo "${{ github.repository }}"
+
+      - name: Build a test bundle (system Node, no portable node.exe)
+        shell: powershell
+        run: .\scripts\release\build-bundle.ps1 -UseInstalledModules -OutDir dist
+
+      - name: Install / upgrade / uninstall smoke test (temp folder, no tasks)
+        shell: powershell
+        run: .\scripts\release\test-install.ps1 -ZipPath (Get-ChildItem dist -Filter 'TermPocket-*-win-x64.zip').FullName
+
+  e2e-headless:
+    # The e2e suites start an isolated VS Code (a GUI) and headless Chrome. Only the "no VS Code"
+    # variants run here, and they are optional: a hosted runner's desktop session and Chrome are not
+    # guaranteed, so failures are reported but do not fail the workflow. Run the full suites locally.
+    name: E2E without VS Code (optional)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            agent/package-lock.json
+            e2e/package-lock.json
+
+      - name: npm ci - agent
+        working-directory: agent
+        run: npm ci --no-audit --no-fund
+
+      - name: npm ci - e2e
+        working-directory: e2e
+        run: npm ci --no-audit --no-fund
+
+      - name: Protocol integration (agent only)
+        working-directory: e2e
+        continue-on-error: true
+        run: npm run test:agent
+
+      - name: PWA in headless Chrome (agent only)
+        working-directory: e2e
+        continue-on-error: true
+        run: npm run test:pwa:agent
+
+      - name: Desktop layout + Remote Desktop mode (agent only)
+        working-directory: e2e
+        continue-on-error: true
+        run: npm run test:desktop:agent
+
+      - name: Upload e2e results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            e2e/artifacts/*.json
+            e2e/artifacts/*.log
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,92 @@
+name: Bug report
+description: Something in TermPocket doesn't work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Security problems go to a private report instead:**
+        Security → Report a vulnerability (see SECURITY.md).
+
+        ⚠️ **Never paste your pairing token, pairing link, QR code or relay key**, and remove host names,
+        IP addresses, user names and paths you don't want public from logs and screenshots.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the Terminals tab on the phone
+        2. …
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Install / autostart
+        - Pairing / connecting
+        - Tailscale
+        - Self-hosted relay
+        - Terminals
+        - VS Code terminals (Live view / mirrored)
+        - Code tab / workbench
+        - Screen / Remote Desktop
+        - System
+        - Tray monitor / dashboard
+        - Docs
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: Where do you use the app?
+      multiple: true
+      options:
+        - Android phone (installed app)
+        - Android phone (browser tab)
+        - Laptop (installed app)
+        - Laptop (browser tab)
+        - Other
+  - type: dropdown
+    id: route
+    attributes:
+      label: How does it connect?
+      options:
+        - Tailscale (tailscale serve)
+        - Self-hosted relay
+        - LAN (host 0.0.0.0)
+        - On the PC itself (127.0.0.1)
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: TermPocket agent and extension, Windows, Node.js, VS Code, browser.
+      placeholder: "TermPocket 1.0.0, extension 1.0.0, Windows 11 24H2, Node 24.x, VS Code 1.10x, Chrome 14x on Android 15"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Relevant lines from the dashboard (http://127.0.0.1:8765/monitor — secrets already removed),
+        %APPDATA%\TermPocket\agent.log, ptyhost.log, or the "TermPocket" output channel in VS Code.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I looked at docs/troubleshooting.md.
+          required: true
+        - label: I removed tokens, pairing links, relay keys and other private data from this report.
+          required: true

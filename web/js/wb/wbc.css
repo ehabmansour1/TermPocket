@@ -1,0 +1,389 @@
+/* Workbench parts by "builder C": Problems + Terminal panel views, quick input (Command Palette /
+ * Quick Open), Source Control and Search side-bar views, status bar items, context menus.
+ * VS Code "Dark Modern" colours. Everything is scoped under .wbc-* classes; only custom
+ * properties prefixed --wbc- are defined (on :root, so popups appended to <body> get them too). */
+
+:root {
+  --wbc-font: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, "Ubuntu", "Droid Sans", sans-serif;
+  --wbc-mono: "Cascadia Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+  --wbc-fg: #cccccc;
+  --wbc-fg-strong: #e7e7e7;
+  --wbc-fg-dim: #9d9d9d;
+  --wbc-fg-muted: #8b949e;
+  --wbc-bg: #181818;           /* side bar / panel */
+  --wbc-editor-bg: #1f1f1f;
+  --wbc-border: #2b2b2b;
+  --wbc-widget-bg: #202020;
+  --wbc-widget-border: #313131;
+  --wbc-focus: #0078d4;
+  --wbc-hover: #2a2d2e;
+  --wbc-sel: #04395e;          /* list.activeSelectionBackground (focused) */
+  --wbc-sel-inactive: #37373d; /* list.inactiveSelectionBackground */
+  --wbc-highlight: #2aaaff;    /* list.highlightForeground */
+  --wbc-input-bg: #313131;
+  --wbc-input-border: #3c3c3c;
+  --wbc-placeholder: #989898;
+  --wbc-badge-bg: #616161;
+  --wbc-badge-fg: #f8f8f8;
+  --wbc-btn-bg: #0078d4;
+  --wbc-btn-hover: #026ec1;
+  --wbc-btn-fg: #ffffff;
+  --wbc-btn2-bg: #313131;
+  --wbc-btn2-hover: #3c3c3c;
+  --wbc-toolbar-hover: rgba(90, 93, 94, 0.31);
+  --wbc-err: #f14c4c;
+  --wbc-warn: #cca700;
+  --wbc-info: #3794ff;
+  --wbc-git-modified: #e2c08d;
+  --wbc-git-added: #81b88b;
+  --wbc-git-deleted: #c74e39;
+  --wbc-git-untracked: #73c991;
+  --wbc-git-renamed: #73c991;
+  --wbc-git-conflict: #e4676b;
+  --wbc-git-ignored: #8c8c8c;
+  --wbc-indent-guide: #585858;
+  --wbc-scroll: rgba(121, 121, 121, 0.4);
+  --wbc-scroll-hover: rgba(100, 100, 100, 0.7);
+  --wbc-shadow: rgba(0, 0, 0, 0.36);
+  --wbc-panel-active: #0078d4;
+  --wbc-status-bg: #181818;
+  --wbc-status-fg: #cccccc;
+  --wbc-status-hover: rgba(255, 255, 255, 0.12);
+  --wbc-remote-bg: #0078d4;
+}
+
+/* ------------------------------------------------------------------ shared */
+
+.wbc-view, .wbc-qi, .wbc-menu {
+  font-family: var(--wbc-font);
+  font-size: 13px;
+  color: var(--wbc-fg);
+  -webkit-font-smoothing: antialiased;
+  line-height: normal;
+  letter-spacing: normal;
+}
+.wbc-view { position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; height: 100%; background: var(--wbc-bg); user-select: none; overflow: hidden; }
+.wbc-view *, .wbc-qi *, .wbc-menu * { box-sizing: border-box; }
+.wbc-view button, .wbc-qi button { font: inherit; color: inherit; }
+.wbc-scroll { overflow: auto; min-height: 0; flex: 1; scrollbar-width: thin; scrollbar-color: var(--wbc-scroll) transparent; }
+.wbc-scroll::-webkit-scrollbar, .wbc-qi-list::-webkit-scrollbar { width: 10px; height: 10px; }
+.wbc-scroll::-webkit-scrollbar-thumb, .wbc-qi-list::-webkit-scrollbar-thumb { background: var(--wbc-scroll); }
+.wbc-scroll::-webkit-scrollbar-thumb:hover, .wbc-qi-list::-webkit-scrollbar-thumb:hover { background: var(--wbc-scroll-hover); }
+.wbc-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+.wbc-ci {
+  font: normal normal normal 16px/1 codicon; display: inline-block; flex: none; width: 1em; height: 1em;
+  text-align: center; text-decoration: none; text-transform: none; text-rendering: auto;
+  -webkit-font-smoothing: antialiased; user-select: none; speak: never;
+}
+.wbc-ci.spin { animation: wbc-spin 1.5s steps(30) infinite; }
+@keyframes wbc-spin { to { transform: rotate(360deg); } }
+
+/* action buttons (codicon toolbar) */
+.wbc-action {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 22px; height: 22px; padding: 3px; margin: 0; border: 0; border-radius: 5px;
+  background: transparent; color: var(--wbc-fg); cursor: pointer; outline: none;
+}
+.wbc-action:hover { background: var(--wbc-toolbar-hover); }
+.wbc-action:focus-visible { outline: 1px solid var(--wbc-focus); outline-offset: -1px; }
+.wbc-action.on { background: rgba(255, 255, 255, 0.12); }
+.wbc-action[disabled] { opacity: 0.4; cursor: default; background: transparent; }
+.wbc-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+
+.wbc-badge {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 11px;
+  background: var(--wbc-badge-bg); color: var(--wbc-badge-fg);
+  font-size: 11px; font-weight: 400; line-height: 18px;
+}
+
+.wbc-message { padding: 8px 20px 8px 22px; color: var(--wbc-fg); line-height: 1.5; user-select: text; white-space: normal; }
+.wbc-message.dim { color: var(--wbc-fg-dim); }
+.wbc-message .wbc-link, .wbc-search-msg .wbc-link { color: #4daafc; cursor: pointer; background: none; border: 0; padding: 0; font: inherit; }
+.wbc-message .wbc-link:hover, .wbc-search-msg .wbc-link:hover { text-decoration: underline; }
+
+.wbc-input {
+  display: block; width: 100%; height: 26px; padding: 3px 6px; margin: 0;
+  background: var(--wbc-input-bg); color: var(--wbc-fg); border: 1px solid var(--wbc-input-border); border-radius: 2px;
+  font: 13px var(--wbc-font); outline: none;
+}
+.wbc-input::placeholder { color: var(--wbc-placeholder); }
+.wbc-input:focus { border-color: var(--wbc-focus); }
+
+.wbc-button {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 26px; padding: 4px 8px;
+  border: 1px solid transparent; border-radius: 2px; background: var(--wbc-btn-bg); color: var(--wbc-btn-fg); cursor: pointer;
+  font: 13px var(--wbc-font); outline: none; line-height: 18px;
+}
+.wbc-button:hover { background: var(--wbc-btn-hover); }
+.wbc-button:focus-visible { outline: 1px solid var(--wbc-focus); outline-offset: 2px; }
+.wbc-button[disabled] { opacity: 0.4; cursor: default; background: var(--wbc-btn-bg); }
+
+/* keybinding keycaps (quick input) */
+.wbc-kb { display: inline-flex; align-items: center; flex: none; gap: 0; color: var(--wbc-fg); font-size: 11px; }
+.wbc-kbd {
+  display: inline-block; font: 11px var(--wbc-font); line-height: 10px; padding: 3px 5px; margin: 0 2px;
+  border-radius: 3px; background: rgba(128, 128, 128, 0.17); border: 1px solid rgba(51, 51, 51, 0.6);
+  border-bottom-color: rgba(68, 68, 68, 0.6); box-shadow: inset 0 -1px 0 rgba(68, 68, 68, 0.6); color: #cccccc;
+  vertical-align: middle;
+}
+.wbc-kb-plus { display: inline-block; color: var(--wbc-fg); } /* VS Code shows the "+" between keycaps */
+.wbc-kb-sep { width: 4px; }
+
+/* match highlights */
+.hl { color: var(--wbc-highlight); font-weight: 600; }
+
+/* file glyphs (fallback when the shell gives none) */
+.wbc-fi {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 16px; height: 22px; margin-right: 6px; font: 700 10px/1 var(--wbc-font); letter-spacing: -0.4px; color: #c5c5c5;
+}
+.wbc-fi.dir { color: #c5c5c5; }
+.wbc-fi.plain { color: #6d8086; font-size: 12px; }
+/* the shell's Seti-style icons inside builder C rows / quick input (same spacing as the explorer) */
+.wbc-row .wb-fi { margin-right: 6px; }
+
+/* ------------------------------------------------------------------ trees */
+
+.wbc-tree { outline: none; position: relative; padding-bottom: 4px; }
+.wbc-row {
+  position: relative; display: flex; align-items: center; height: 22px; line-height: 22px; padding-right: 8px;
+  cursor: pointer; white-space: nowrap; overflow: hidden; color: var(--wbc-fg);
+}
+.wbc-row:hover { background: var(--wbc-hover); }
+.wbc-row.selected { background: var(--wbc-sel-inactive); }
+.wbc-tree:focus-within .wbc-row.selected, .wbc-tree:focus .wbc-row.selected { background: var(--wbc-sel); color: #ffffff; }
+.wbc-tree:focus .wbc-row.focused::after, .wbc-tree:focus-within .wbc-row.focused::after {
+  content: ""; position: absolute; inset: 0; outline: 1px solid var(--wbc-focus); outline-offset: -1px; pointer-events: none;
+}
+.wbc-guide { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid transparent; pointer-events: none; }
+.wbc-tree:hover .wbc-guide { border-left-color: rgba(88, 88, 88, 0.4); }
+.wbc-twistie {
+  display: flex; align-items: center; justify-content: center; flex: none; width: 16px; height: 100%;
+  padding-right: 0; margin-right: 6px; transform: translateX(0); color: #c5c5c5;
+}
+.wbc-twistie .ci { transition: transform 0.1s ease-out; }
+.wbc-twistie.open .ci { transform: rotate(90deg); }
+.wbc-twistie.leaf { visibility: hidden; }
+.wbc-label { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.wbc-desc { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; margin-left: 6px; font-size: 12px; color: var(--wbc-fg-dim); opacity: 0.95; }
+.wbc-row.selected .wbc-desc { color: inherit; opacity: 0.8; }
+.wbc-row-end { margin-left: auto; display: flex; align-items: center; gap: 4px; flex: none; padding-left: 6px; }
+.wbc-row .wbc-hover-actions { display: none; }
+.wbc-row:hover .wbc-hover-actions, .wbc-row.focused .wbc-hover-actions { display: flex; }
+.wbc-row .wbc-hover-actions .wbc-action { width: 20px; height: 20px; padding: 2px; }
+.wbc-row .wbc-hover-actions + .wbc-deco { margin-left: 2px; }
+
+/* section headers (Changes / Staged Changes …) */
+.wbc-section-head {
+  display: flex; align-items: center; height: 22px; padding-right: 8px; cursor: pointer;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--wbc-fg); outline: none;
+}
+.wbc-section-head:focus-visible { outline: 1px solid var(--wbc-focus); outline-offset: -1px; }
+.wbc-section-head .wbc-twistie { margin-left: 2px; margin-right: 2px; }
+
+/* ------------------------------------------------------------------ context menu */
+
+.wbc-menu {
+  position: fixed; z-index: 2600; min-width: 160px; max-width: 420px; padding: 4px 0; border-radius: 5px;
+  background: #1f1f1f; color: var(--wbc-fg); border: 1px solid #454545; box-shadow: 0 2px 8px var(--wbc-shadow); outline: none;
+}
+.wbc-menu-item { display: flex; align-items: center; height: 24px; margin: 0 4px; padding: 0 0 0 0; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+.wbc-menu-item.active { background: var(--wbc-sel); color: #ffffff; outline: 1px solid var(--wbc-focus); outline-offset: -1px; }
+.wbc-menu-item.disabled { opacity: 0.4; cursor: default; }
+.wbc-menu-check { width: 24px; display: flex; justify-content: center; flex: none; }
+.wbc-menu-label { flex: 1; padding-right: 22px; }
+.wbc-menu-kbd { padding-right: 16px; font-size: 12px; color: inherit; opacity: 0.9; }
+.wbc-menu-sep { height: 1px; margin: 4px 0; background: #454545; }
+
+/* ------------------------------------------------------------------ quick input */
+
+.wbc-qi-backdrop { position: fixed; inset: 0; z-index: 2400; background: transparent; }
+/* inside the workbench overlay: centred on the workbench, over the title bar like VS Code with the command center (quickPickTop = 6) */
+.wb-overlay > .wbc-qi-backdrop { position: absolute; }
+.wb-overlay > .wbc-qi { position: absolute; top: 6px; width: min(600px, calc(100% - 40px)); }
+.wbc-qi {
+  position: fixed; z-index: 2500; left: 50%; top: 40px; transform: translateX(-50%);
+  width: min(600px, calc(100vw - 32px)); padding: 0 0 6px; border-radius: 8px;
+  background: #222222; color: var(--wbc-fg); border: 1px solid #2b2b2b;
+  box-shadow: 0 0 8px 2px var(--wbc-shadow); overflow: hidden;
+}
+.wbc-qi-title { display: flex; align-items: center; height: 30px; padding: 0 10px; font-size: 13px; justify-content: center; color: var(--wbc-fg); }
+.wbc-qi-head { padding: 6px 6px 0; display: flex; gap: 4px; align-items: center; }
+.wbc-qi-input-wrap { position: relative; flex: 1; }
+.wbc-qi-input {
+  display: block; width: 100%; height: 28px; padding: 3px 6px 3px 6px; margin: 0;
+  background: var(--wbc-input-bg); color: var(--wbc-fg); border: 1px solid var(--wbc-input-border); border-radius: 2px;
+  font: 13px var(--wbc-font); outline: none;
+}
+.wbc-qi-input:focus { border-color: var(--wbc-focus); }
+.wbc-qi-input::placeholder { color: var(--wbc-placeholder); }
+.wbc-qi-count { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
+.wbc-qi-message { padding: 6px 11px 2px; font-size: 13px; color: var(--wbc-fg); line-height: 18px; white-space: normal; }
+.wbc-qi-message.err { color: var(--wbc-err); }
+.wbc-qi-progress { height: 2px; margin: 0 6px; overflow: hidden; position: relative; visibility: hidden; }
+.wbc-qi-progress.on { visibility: visible; }
+.wbc-qi-progress::after { content: ""; position: absolute; top: 0; bottom: 0; width: 2%; background: #0078d4; animation: wbc-progress 4s linear infinite; }
+@keyframes wbc-progress { 0% { left: 0; width: 2%; } 50% { width: 20%; } 100% { left: 100%; width: 2%; } }
+.wbc-qi-list { max-height: min(440px, calc(100vh - 140px)); overflow-y: auto; margin-top: 5px; padding: 0 5px; outline: none; scrollbar-width: thin; scrollbar-color: var(--wbc-scroll) transparent; }
+.wbc-qi-item {
+  position: relative; display: flex; align-items: center; height: 22px; padding: 0 11px 0 11px; border-radius: 3px;
+  cursor: pointer; white-space: nowrap; overflow: hidden; line-height: 22px;
+}
+.wbc-qi-item.two { height: 44px; line-height: normal; }
+.wbc-qi-item:hover { background: var(--wbc-hover); }
+.wbc-qi-item.active { background: var(--wbc-sel); color: #ffffff; outline: 1px solid var(--wbc-focus); outline-offset: -1px; }
+.wbc-qi-item.sep-top { margin-top: 0; }
+.wbc-qi-item.sep-top::before { content: ""; position: absolute; left: 0; right: 0; top: 0; border-top: 1px solid #3c3c3c; }
+.wbc-qi-icon { display: flex; align-items: center; flex: none; margin-right: 4px; }
+.wbc-qi-icon .wbc-fi { margin-right: 2px; }
+.wbc-qi-main { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; overflow: hidden; }
+.wbc-qi-line { display: flex; align-items: baseline; min-width: 0; overflow: hidden; }
+.wbc-qi-label { flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.wbc-qi-desc { margin-left: 6px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12px; color: var(--wbc-fg-dim); white-space: pre; }
+.wbc-qi-item.active .wbc-qi-desc { color: inherit; opacity: 0.85; }
+.wbc-qi-detail { font-size: 12px; color: var(--wbc-fg-dim); overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.wbc-qi-item.active .wbc-qi-detail { color: inherit; opacity: 0.85; }
+.wbc-qi-right { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex: none; }
+.wbc-qi-sep-label { font-size: 12px; color: var(--wbc-fg-dim); flex: none; }
+.wbc-qi-item.active .wbc-qi-sep-label { color: inherit; opacity: 0.85; }
+.wbc-qi-item .wbc-qi-btns { display: none; }
+.wbc-qi-item:hover .wbc-qi-btns, .wbc-qi-item.active .wbc-qi-btns { display: flex; }
+.wbc-qi-empty { padding: 4px 11px; height: 22px; line-height: 14px; color: var(--wbc-fg); }
+
+/* ------------------------------------------------------------------ problems */
+
+.wbc-problems .wbc-tree { padding-top: 0; }
+.wbc-problems-bar { display: flex; align-items: center; gap: 6px; height: 30px; padding: 2px 8px 2px 20px; flex: none; }
+.wbc-problems-bar .wbc-filter { position: relative; flex: 0 1 380px; min-width: 120px; margin-left: auto; }
+.wbc-problems-bar .wbc-input { height: 24px; padding-right: 26px; }
+.wbc-problems-bar .wbc-filter .ci-filter { position: absolute; right: 6px; top: 4px; color: var(--wbc-fg-dim); pointer-events: none; }
+.wbc-problems-bar .wbc-summary { color: var(--wbc-fg-dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wbc-sev { display: flex; align-items: center; justify-content: center; width: 16px; flex: none; margin-right: 6px; }
+.wbc-sev.error { color: var(--wbc-err); }
+.wbc-sev.warning { color: var(--wbc-warn); }
+.wbc-sev.info, .wbc-sev.hint { color: var(--wbc-info); }
+.wbc-problems .wbc-row.wbc-prob-marker .wbc-label { flex: 0 1 auto; }
+.wbc-problems .wbc-row.wbc-prob-marker .wbc-desc { font-size: 13px; }
+.wbc-problems .wbc-row.wbc-prob-file .wbc-badge { margin-left: 8px; }
+.wbc-pos { margin-left: 6px; color: var(--wbc-fg-dim); flex: none; font-size: 13px; }
+.wbc-row.selected .wbc-pos { color: inherit; opacity: 0.8; }
+
+/* ------------------------------------------------------------------ terminal panel */
+
+.wbc-term { flex-direction: row; background: var(--wbc-bg); }
+.wbc-term-main { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; }
+.wbc-term-pane { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; }
+.wbc-term-pane[hidden] { display: none; }
+.wbc-term-sash { flex: none; width: 4px; margin: 0 -2px; cursor: ew-resize; position: relative; z-index: 2; }
+.wbc-term-sash:hover, .wbc-term-sash.active { background: var(--wbc-focus); transition: background 0.1s 0.3s; }
+.wbc-term-tabs { flex: none; display: flex; flex-direction: column; min-width: 46px; border-left: 1px solid var(--wbc-border); background: var(--wbc-bg); }
+.wbc-term-tabs-bar { display: flex; align-items: center; justify-content: flex-end; height: 26px; padding: 0 6px; flex: none; gap: 1px; }
+.wbc-term-tabs .wbc-tree { padding: 0; }
+.wbc-term-tab { padding-left: 8px; padding-right: 6px; }
+.wbc-term-tab .wbc-term-ico { display: flex; align-items: center; justify-content: center; width: 16px; margin-right: 6px; flex: none; color: var(--wbc-fg); }
+.wbc-term-tab .wbc-label { flex: 1; }
+.wbc-term-tab.narrow .wbc-label, .wbc-term-tab.narrow .wbc-hover-actions { display: none !important; }
+.wbc-term-tab .wbc-term-kind { margin-left: 4px; font-size: 11px; color: var(--wbc-fg-dim); }
+.wbc-term-tab.active-term::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--wbc-focus); }
+.wbc-term-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; margin-left: 4px; }
+.wbc-term-dot.warn { background: var(--wbc-warn); }
+.wbc-term-dot.err { background: var(--wbc-err); }
+.wbc-term-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 10px 20px; color: var(--wbc-fg-dim); gap: 10px; }
+.wbc-term-empty .wbc-button { width: auto; padding: 4px 14px; }
+
+/* embedded terminal views: no own chrome inside the VS Code panel */
+.wbc-term-pane .view.embedded { position: static; inset: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--wbc-bg); border: 0; border-radius: 0; box-shadow: none; }
+.wbc-term-pane .view-head, .wbc-term-pane .vst-bar { display: none !important; }
+.wbc-term-pane { --term-bg: #181818; }
+.wbc-term-pane .term-wrap { background: #181818; padding: 0 0 0 20px !important; }
+.wbc-term-pane .vst-wrap .xterm-screen { outline: 0; }
+.wbc-term-pane .xterm .xterm-viewport { background: #181818 !important; }
+.wbc-term-pane .xterm-viewport::-webkit-scrollbar { width: 10px; }
+.wbc-term-pane .xterm-viewport::-webkit-scrollbar-thumb { background: transparent; }
+.wbc-term-pane .term-wrap:hover .xterm-viewport::-webkit-scrollbar-thumb, .wbc-term-pane .term-wrap:hover::-webkit-scrollbar-thumb { background: var(--wbc-scroll); }
+.wbc-term-pane .banner-slot:not(:empty) { padding: 4px 12px 4px 20px; }
+/* Like VS Code's terminal: the xterm starts at the very top of the panel body. */
+.wbc-term-pane .term-wrap, .wbc-term-pane .vst-wrap { padding-top: 0 !important; }
+.wbc-term-pane .vst-oldext-title { font-family: var(--wbc-font, inherit); font-weight: 400; font-size: 13px; color: #cccccc; }
+.wbc-term-pane .vst-oldext-sub { color: #9d9d9d; }
+.wbc-term-pane .vst-oldext-ico { width: 36px; height: 36px; background: rgba(204, 167, 0, 0.12); color: #cca700; }
+/* VS Code button / link styles inside the terminal panel (Live view banners and notices). */
+.wbc-term-pane .btn { border-radius: 2px; font: 13px var(--wbc-font, 'Segoe UI', sans-serif); }
+.wbc-term-pane .btn.primary { background: #0078d4; border-color: #0078d4; color: #ffffff; }
+.wbc-term-pane .btn.primary:hover { background: #026ec1; }
+.wbc-term-pane .btn.ghost { color: #cccccc; border: 1px solid rgba(255, 255, 255, 0.12); background: transparent; }
+.wbc-term-pane .btn.ghost:hover { background: rgba(90, 93, 94, 0.31); }
+.wbc-term-pane .vst-link { color: #4daafc; text-decoration-color: rgba(77, 170, 252, 0.4); }
+.wbc-term-pane .banner { border-radius: 2px; }
+.wbc-term-pane .banner.warn { background: rgba(204, 167, 0, 0.1); border-color: rgba(204, 167, 0, 0.3); color: #cca700; }
+.wbc-term-pane .banner.info { background: rgba(55, 148, 255, 0.1); border-color: rgba(55, 148, 255, 0.3); color: #3794ff; }
+.wbc-term-pane .banner .banner-text { color: #cccccc; }
+.wbc-term-pane .xkeys, .wbc-term-pane .cmdline { border-top: 1px solid var(--wbc-border); }
+
+/* ------------------------------------------------------------------ side bar views (SCM, Search) */
+
+.wbc-side { background: var(--wbc-bg); }
+.wbc-side-top { padding: 0 12px 0 20px; flex: none; }
+.wbc-side-top.scm { padding: 0 12px 0 20px; }
+.wbc-side-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 2px; height: 22px; padding: 0 8px; flex: none; margin-top: -2px; }
+.wbc-scm-input {
+  display: block; width: 100%; min-height: 26px; max-height: 134px; resize: none; overflow-y: auto;
+  padding: 4px 6px; margin: 0; background: var(--wbc-input-bg); color: var(--wbc-fg); border: 1px solid var(--wbc-input-border); border-radius: 2px;
+  font: 13px/18px var(--wbc-font); outline: none; scrollbar-width: thin;
+}
+.wbc-scm-input:focus { border-color: var(--wbc-focus); }
+.wbc-scm-input::placeholder { color: var(--wbc-placeholder); }
+.wbc-scm-commit { margin: 6px 0 8px; display: flex; }
+.wbc-scm-commit .wbc-button { border-radius: 2px; }
+.wbc-scm-repo { display: flex; align-items: center; height: 22px; padding: 0 8px 0 8px; cursor: default; font-weight: 700; font-size: 11px; text-transform: uppercase; }
+.wbc-scm-repo .wbc-desc { text-transform: none; font-weight: 400; }
+.wbc-row.scm-file .wbc-label { flex: 0 1 auto; }
+.wbc-deco { flex: none; width: 14px; text-align: center; font-size: 12px; font-weight: 400; margin-left: 4px; }
+.git-M { color: var(--wbc-git-modified); }
+.git-A { color: var(--wbc-git-added); }
+.git-D { color: var(--wbc-git-deleted); }
+.git-U { color: var(--wbc-git-untracked); }
+.git-R, .git-C { color: var(--wbc-git-renamed); }
+.git-conflict { color: var(--wbc-git-conflict); }
+.wbc-row.scm-file .wbc-label.git-D { text-decoration: line-through; }
+.wbc-row.selected .wbc-label[class*="git-"] { color: inherit; }
+.wbc-tree:focus-within .wbc-row.selected .wbc-deco { color: #ffffff; }
+
+.wbc-search-box { position: relative; padding: 4px 12px 4px 20px; flex: none; }
+.wbc-search-box .wbc-input { padding-right: 52px; }
+.wbc-search-box .wbc-search-opts { position: absolute; right: 15px; top: 6px; display: flex; gap: 1px; }
+.wbc-search-box .wbc-search-opts .wbc-action { width: 20px; height: 20px; padding: 2px; border: 1px solid transparent; border-radius: 3px; }
+.wbc-search-box .wbc-search-opts .wbc-action.on { background: rgba(36, 137, 219, 0.51); border-color: #2488db; color: #ffffff; }
+.wbc-search-msg { padding: 4px 12px 6px 20px; color: var(--wbc-fg-dim); font-size: 13px; line-height: 18px; flex: none; user-select: text; }
+.wbc-search-msg.err { color: var(--wbc-err); }
+.wbc-row .wbc-match { color: inherit; }
+.wbc-row .wbc-match .hl { background: rgba(234, 92, 0, 0.33); color: inherit; font-weight: inherit; border-radius: 0; outline: 1px dotted transparent; }
+
+/* ------------------------------------------------------------------ status bar items (fallback look) */
+
+.wbc-status-item { display: inline-flex; align-items: center; gap: 3px; }
+.wbc-status-item .ci { width: 14px; height: 14px; }
+.wbc-status-gap { width: 4px; display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wbc-ci.spin { animation: none; }
+  .wbc-twistie .ci { transition: none; }
+  .wbc-qi-progress::after { animation-duration: 12s; }
+}
+
+/* ------------------------------------------------------------------ title-bar actions (panel / side bar) */
+
+.wbc-panel-actions, .wbc-title-actions { display: flex; align-items: center; gap: 2px; font-family: var(--wbc-font); font-size: 13px; color: var(--wbc-fg); }
+.wbc-panel-actions .wbc-action, .wbc-title-actions .wbc-action { width: 22px; height: 22px; padding: 3px; }
+.wbc-panel-actions .wbc-filter { position: relative; width: clamp(160px, 26vw, 360px); margin: 0 4px 0 0; }
+.wbc-panel-actions .wbc-input { height: 24px; padding: 2px 26px 2px 6px; font-size: 13px; }
+.wbc-panel-actions .wbc-filter .ci { position: absolute; right: 5px; top: 4px; color: var(--wbc-fg-dim); pointer-events: none; }
+.wbc-panel-actions .wbc-summary { margin-right: 8px; font-size: 12px; color: var(--wbc-fg-dim); white-space: nowrap; }
+.wbc-panel-actions .wbc-summary:empty { display: none; }
+.wbc-problems-bar .wbc-panel-actions { flex: 1; justify-content: flex-end; }
+.wbc-strong { font-weight: 700; font-size: 11px; text-transform: uppercase; }
+.wbc-act-icon { display: flex; align-items: center; justify-content: center; }
+.wbc-term-sash.dragging { background: var(--wbc-focus); }
+.wbc-side-toolbar .wbc-title-actions { margin-left: auto; }

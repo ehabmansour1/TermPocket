@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an idea or an improvement for TermPocket.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation and the problem, e.g. "From my phone I want to … but …".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you imagine it working. Screenshots or sketches are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you use today, or how other tools do it.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Terminals
+        - VS Code
+        - Screen / Remote Desktop
+        - System
+        - Connecting (Tailscale / relay)
+        - Tray monitor / dashboard
+        - Install / docs
+        - Other
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to work on this myself (see CONTRIBUTING.md).

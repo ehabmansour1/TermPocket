@@ -1,0 +1,11 @@
+# Keep the packaged extension small: sources, runtime deps and docs only.
+test/**
+.vscode/**
+.vscode-test/**
+*.vsix
+**/*.map
+**/.eslintrc*
+**/.prettierrc*
+.gitignore
+node_modules/**/*.md
+node_modules/**/test/**
